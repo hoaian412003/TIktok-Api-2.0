@@ -20,7 +20,7 @@ router.post('/follow', async (req, res) => {
     }
 })
 
-router.get('/follow/:userId', async (req, res) => {
+router.get('/follow/user/:userId', async (req, res) => {
     try {
         const owner = req.user?.userId;
         if (!owner) throw 'failed';
@@ -41,11 +41,12 @@ router.get('/followers', async (req, res) => {
         const followers = await Follows.findAll({
             where: { follower: owner },
             include: [
-                { model: Users, as: 'follower', attributes: ['username', 'nickname'], include: [{ model: Images }] }
+                { model: Users, foreignKey: 'follower', attributes: ['username', 'nickname'], include: [{ model: Images }] }
             ]
         })
         res.send(followers);
     } catch (err) {
+        console.log(err);
         res.sendStatus(400);
     }
 })
@@ -62,6 +63,20 @@ router.get('/following', async (req, res) => {
         res.send(follows);
     } catch (err) {
         console.log(err);
+        res.sendStatus(400);
+    }
+})
+
+router.delete('/follow/user/:userId', async (req, res) => {
+    try {
+        const { userId: owner } = req.user;
+        const { userId: follower } = req.params;
+        const follow = await Follows.destroy({
+            where: { owner, follower }
+        })
+        if (!follow) throw 'failed';
+        res.send('deleted');
+    } catch (err) {
         res.sendStatus(400);
     }
 })

@@ -28,7 +28,7 @@ router.post('/image', upload.single('file'), async (req, res) => {
     }
 })
 
-router.get('/user/:userId/image', async (req, res) => {
+router.get('/image/user/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         if (!userId) throw 'failed';
