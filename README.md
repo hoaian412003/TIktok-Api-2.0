@@ -14,7 +14,7 @@
 
 ## Require
 * [Nodejs](https://nodejs.org/en/download/): Nodejs development
-* [npm](https://nodejs.org/en/download/): package magnament for install nodejs
+* [npm](https://nodejs.org/en/download/): package manager for install nodejs
 
 ## Start up project in localhost
 * Install [ nodejs and npm ]()
