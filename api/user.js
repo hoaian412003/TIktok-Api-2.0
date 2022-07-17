@@ -41,16 +41,17 @@ router.get('/user/:userId', async (req, res) => {
             attributes: {
                 include: ['userId', 'username', 'nickname', 'description',
                     [Sequelize.fn('count', Sequelize.col('follower.followId')), 'followerCount'],
-                    [Sequelize.fn('count', Sequelize.col('following.followId')), 'followingCount']
+                    [Sequelize.fn('count', Sequelize.col('following.followId')), 'followingCount'],
                 ]
             },
             include: [{
                 model: Follows, as: 'follower', attributes: []
             }, {
                 model: Follows, as: 'following', attributes: []
+            }, {
+                model: Images, foreignKey: 'owner', attributes: { exclude: ['data'] }
             }],
-            raw: true,
-            group: ['users.userId']
+            group: ['users.userId', 'image.imageId']
         })
         res.send(user);
     } catch (err) {
@@ -87,6 +88,21 @@ router.get('/users/search', async (req, res) => {
         })
         res.send(users);
     } catch (err) {
+        res.sendStatus(400);
+    }
+})
+
+router.put('/users/me', async (req, res) => {
+    try {
+        const data = JSON.parse(JSON.stringify(req.body));
+        const { userId } = req.user;
+        const user = await Users.update(data, {
+            where: { userId: userId }
+        })
+        if (!user) throw 'failed';
+        res.send('updated');
+    } catch (err) {
+        console.log(err);
         res.sendStatus(400);
     }
 })

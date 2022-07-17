@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import Sequelize from 'sequelize';
 import Videos from '../Model/videos.js';
 import Likes from '../Model/likes.js';
+import Users from '../Model/users.js';
+import Images from '../Model/images.js';
 
 dotenv.config();
 
@@ -44,14 +46,35 @@ router.get('/video/:videoId', async (req, res) => {
         const { videoId } = req.params;
         const video = await Videos.findByPk(videoId, {
             attributes: {
-                include: ['videoId', 'url', 'description', 'owner', [Sequelize.fn('count', 'likes.likeId'), 'likeCount']],
+                include: [[Sequelize.fn('count', 'likes.likeId'), 'likeCount']],
+                exclude: ['data']
             },
-            include: [{ model: Likes, foreignKey: 'videoId' }],
-            group: ['videos.videoId', 'likes.likeId']
+            include: [
+                { model: Likes, foreignKey: 'videoId', attributes: [] },
+                { model: Users, foreignKey: 'owner', attributes: { exclude: ['password'] }, include: [{ model: Images, foreignKey: 'owner', attributes: { exclude: ['data'] } }] }
+            ],
+            group: ['videos.videoId', 'likes.likeId', 'user.userId', 'user->image.imageId']
         });
         res.send(video);
     } catch (err) {
         console.log(err);
+        res.sendStatus(400);
+    }
+})
+
+router.delete('/video/:videoId', async (req, res) => {
+    try {
+        const { videoId } = req.params;
+        const { userId } = req.user;
+        if (!userId) throw 'failed';
+        const video = await Videos.destroy({
+            where: {
+                videoId, owner: userId
+            }
+        })
+        if (!video) throw 'failed';
+        res.end('deleted')
+    } catch (err) {
         res.sendStatus(400);
     }
 })
@@ -64,7 +87,10 @@ router.get('/videos/like', async (req, res) => {// update
             where: { owner },
             attributes: [],
             include: [
-                { model: Videos, attributes: { exclude: ['data'] } }
+                {
+                    model: Videos, attributes: { exclude: ['data'] },
+                    include: [{ model: Users, foreignKey: 'owner', attributes: { exclude: ['password'] } }],
+                }
             ]
         })
         res.send(videos);
@@ -81,8 +107,14 @@ router.get('/videos', async (req, res) => {
         const videos = await Videos.findAll({
             where: { owner },
             attributes: {
+                include: [[Sequelize.fn('count', 'likes.likeId'), 'likeCount']],
                 exclude: ['data']
-            }
+            },
+            include: [
+                { model: Likes, foreignKey: 'videoId', attributes: [] },
+                { model: Users, foreignKey: 'owner', attributes: { exclude: ['password'] }, include: [{ model: Images, foreignKey: 'owner', attributes: { exclude: ['data'] } }] }
+            ],
+            group: ['videos.videoId', 'likes.likeId', 'user.userId', 'user->image.imageId']
         })
         res.send(videos);
     } catch (err) {

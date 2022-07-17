@@ -9,9 +9,9 @@ const router = Router();
 
 router.post('/register', async (req, res) => {
     try {
-        const { username, nickname, password } = req.body;
+        const { username, nickname, password, description } = req.body;
         const user = await Users.create({
-            username, nickname, password
+            username, nickname, password, description
         })
         res.send(user);
     } catch (err) {
@@ -24,7 +24,7 @@ router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
         const user = await Users.findOne({
-            where: {username}
+            where: { username }
         }).then(user => {
             if (user && bcrypt.compareSync(password, user.password)) {
                 return user;
